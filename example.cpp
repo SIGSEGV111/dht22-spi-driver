@@ -8,6 +8,7 @@ int main()
 	try
 	{
 		// a small example
+		dht22::DEBUG = true;
 
 		// attach an instance of the SPI-driver to the first SPI device on the first bus (0.0)
 		// transfer speed will be set by the driver

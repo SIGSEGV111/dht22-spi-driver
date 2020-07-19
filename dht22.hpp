@@ -9,6 +9,8 @@ namespace dht22
 {
 	class TSPIDriver;
 
+	extern bool DEBUG;
+
 
 	class TDHT22
 	{

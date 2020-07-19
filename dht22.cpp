@@ -9,6 +9,8 @@
 
 namespace dht22
 {
+	bool DEBUG = false;
+
 	inline static bool Bit(const void* const arr, const size_t index)
 	{
 		const size_t idx_byte = index / 8;
@@ -96,6 +98,14 @@ namespace dht22
 			celsius_temp *= -1.0;
 	}
 
+	static void Hexdump(const char* const msg, const void* const buffer, const unsigned sz_buffer)
+	{
+		fprintf(stderr, "[DEBUG] %s:", msg);
+		for(unsigned i = 0; i < sz_buffer; i++)
+			fprintf(stderr, " %02hhx", reinterpret_cast<const uint8_t* const>(buffer)[i]);
+		fprintf(stderr, "\n");
+	}
+
 	void TDHT22::Refresh()
 	{
 		const unsigned n_start_signal = 250; // 20 * 1000 / 10 / 8
@@ -112,8 +122,12 @@ namespace dht22
 		// clear RX buffer
 		memset(rx, 0, sz_buffer);
 
+		if(DEBUG) Hexdump("tx-buffer", tx, sz_buffer);
+
 		// sent TX buffer and at the same time receive RX buffer
 		this->dev->ExchangeData(tx, rx, sz_buffer);
+
+		if(DEBUG) Hexdump("rx-buffer", rx, sz_buffer);
 
 		// the first 'n_start_signal' bytes of the RX buffer must be zeros, or something is wrong with the circuit/bus
 		for(unsigned i = 0; i < n_start_signal; i++)
@@ -133,6 +147,7 @@ namespace dht22
 	TDHT22::TDHT22(TSPIDriver* dev) : dev(dev)
 	{
 		const unsigned long long freq = SampleTimeToFrequency(10000);
+		if(DEBUG) fprintf(stderr, "[DEBUG] spi-freq = %llu Hz\n", freq);
 		dev->Speed(freq);
 		this->Refresh();
 	}
