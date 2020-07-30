@@ -1,11 +1,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <sys/ioctl.h>
 #include <linux/types.h>
 #include <linux/spi/spidev.h>
 
 #include "dht22.hpp"
+
+#define SYSERR(expr) (([&](){ const auto r = ((expr)); if( (long)r == -1L ) { throw #expr; } else return r; })())
 
 namespace dht22
 {
@@ -102,7 +105,7 @@ namespace dht22
 	{
 		fprintf(stderr, "[DEBUG] %s:", msg);
 		for(unsigned i = 0; i < sz_buffer; i++)
-			fprintf(stderr, " %02hhx", reinterpret_cast<const uint8_t* const>(buffer)[i]);
+			fprintf(stderr, " %02hhx", reinterpret_cast<const uint8_t*>(buffer)[i]);
 		fprintf(stderr, "\n");
 	}
 

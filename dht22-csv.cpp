@@ -1,32 +1,63 @@
+#include <signal.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <sys/time.h>
+#include <sys/file.h>
 #include "dht22.hpp"
 
-using namespace dht22;
+#define SYSERR(expr) (([&](){ const auto r = ((expr)); if( (long)r == -1L ) { throw #expr; } else return r; })())
 
-int main()
+static volatile bool do_run = true;
+
+static void OnSignal(int)
 {
+	do_run = false;
+}
+
+int main(int argc, char* argv[])
+{
+	signal(SIGINT,  &OnSignal);
+	signal(SIGTERM, &OnSignal);
+	signal(SIGHUP,  &OnSignal);
+	signal(SIGQUIT, &OnSignal);
+
+	close(STDIN_FILENO);
+
 	try
 	{
-		// a small example (but write as CSV including timestamps)
+		if(argc < 3)
+			throw "need exactly two arguments: <SPI device> <location>";
 
-		// attach an instance of the SPI-driver to the first SPI device on the first bus (0.0)
-		// transfer speed will be set by the driver
-		TSPIDriver spi_dev_1("/dev/spidev0.0", 0);
+		using namespace dht22;
+		::dht22::DEBUG = false;
 
-		timeval tv_start, tv_end;
-		SYSERR(gettimeofday(&tv_start, NULL));
-		TDHT22 sensor1(&spi_dev_1);
-		SYSERR(gettimeofday(&tv_end, NULL));
+		TSPIDriver spidev(argv[1]);
+		TDHT22 dht22(&spidev);
 
-		printf("%ld.%06ld;%ld.%06ld;%f;%f\n", tv_start.tv_sec, tv_start.tv_usec, tv_end.tv_sec, tv_end.tv_usec, sensor1.TemperatureCelsius(), sensor1.HumidityPercent());
+		while(do_run)
+		{
+			timeval ts;
 
-		// c++ destructors will take care of proper shutdown and release of resources...
+			dht22.Refresh();
+			SYSERR(gettimeofday(&ts, NULL));
+
+			SYSERR(flock(STDOUT_FILENO, LOCK_EX));
+			printf("%ld.%06ld;\"%s\";\"dht22\";\"temperature\";%f\n", ts.tv_sec, ts.tv_usec, argv[2], dht22.TemperatureCelsius());
+			printf("%ld.%06ld;\"%s\";\"dht22\";\"humidity\";%f\n", ts.tv_sec, ts.tv_usec, argv[2], dht22.HumidityPercent());
+			fflush(stdout);
+			SYSERR(flock(STDOUT_FILENO, LOCK_UN));
+
+			usleep(15 * 1000 * 1000);
+		}
+
+		fprintf(stderr,"\n[INFO] bye!\n");
+		return 0;
 	}
-	catch(const char* msg)
+	catch(const char* const err)
 	{
-		fprintf(stderr, "ERROR: %s\n", msg);
+		fprintf(stderr, "[ERROR] %s\n", err);
+		perror("[ERROR] kernel message");
 		return 1;
 	}
-	return 0;
+	return 2;
 }

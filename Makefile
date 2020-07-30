@@ -1,21 +1,9 @@
-.PHONY: all clean run install-influx
+.PHONY: clean all
 
-all: example dht22-csv dht22-influx
+all: dht22-csv
 
-example: dht22.cpp example.cpp Makefile
-	g++ dht22.cpp example.cpp -o example -O3 -flto -g  -Wall -Wextra -Werror
-
-dht22-csv: dht22.cpp dht22-csv.cpp Makefile
-	g++ dht22.cpp dht22-csv.cpp -o dht22-csv -O3 -flto -g  -Wall -Wextra -Werror
-
-dht22-influx: dht22.cpp dht22-influx.cpp Makefile
-	g++ dht22.cpp dht22-influx.cpp -o dht22-influx -O3 -flto -g  -Wall -Wextra -Werror
-
-run: example
-	./example
+dht22-csv: dht22-csv.cpp dht22.cpp dht22.hpp Makefile
+	g++ -Wall -Wextra -flto -O3 -march=native -fdata-sections -ffunction-sections -Wl,--gc-sections dht22-csv.cpp dht22.cpp -o dht22-csv
 
 clean:
-	rm -vf example dht22-influx dht22-csv
-
-install-influx: Makefile dht22-influx
-	install -v dht22-influx dht22-influx.sh /usr/local/sbin/
+	rm -vf dht22-csv

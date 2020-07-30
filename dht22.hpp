@@ -1,16 +1,13 @@
-#pragma once
+#ifndef __include_dht22_dht22_hpp__
+#define __include_dht22_dht22_hpp__
 
 #include <stdint.h>
-#include <unistd.h>
-
-#define SYSERR(expr) do { if((long)(expr) == -1L) { perror(#expr); throw #expr; } } while(false)
 
 namespace dht22
 {
 	class TSPIDriver;
 
 	extern bool DEBUG;
-
 
 	class TDHT22
 	{
@@ -49,7 +46,9 @@ namespace dht22
 			void SendData(const void* buffer, const size_t n_bytes);
 			void ExchangeData(const void* buffer_send, void* buffer_receive, const size_t n_bytes);
 
-			TSPIDriver(const char* const spidev, const long long hz_speed);
+			TSPIDriver(const char* const spidev, const long long hz_speed = 0);
 			~TSPIDriver();
 	};
 }
+
+#endif
