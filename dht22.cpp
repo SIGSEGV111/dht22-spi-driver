@@ -2,6 +2,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <math.h>
 #include <sys/ioctl.h>
 #include <linux/types.h>
 #include <linux/spi/spidev.h>
@@ -147,12 +148,11 @@ namespace dht22
 		return ns_per_second / ns;
 	}
 
-	TDHT22::TDHT22(TSPIDriver* dev) : dev(dev)
+	TDHT22::TDHT22(TSPIDriver* dev) : dev(dev), celsius_temp(NAN), percent_humidity(NAN)
 	{
 		const unsigned long long freq = SampleTimeToFrequency(10000);
 		if(DEBUG) fprintf(stderr, "[DEBUG] spi-freq = %llu Hz\n", freq);
 		dev->Speed(freq);
-		this->Refresh();
 	}
 
 	void TSPIDriver::SendData(const void* buffer, const size_t n_bytes)
